@@ -1,4 +1,4 @@
--- AI tarafından oluşturulan hatalı COUNT(*) adayı: karşı örnek için.
+-- Bu sorgu yapay zekanın verdiği cevap değildir. Hatalı COUNT(*) yöntemini göstermek için kullanılan karşılaştırma sorgusudur.
 SELECT g.guest_id, g.full_name
 FROM guest g
 JOIN reservation r ON r.guest_id = g.guest_id
