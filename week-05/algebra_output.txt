@@ -1,0 +1,101 @@
+=== D1 ===
+ room_id | room_number | nightly_rate 
+---------+-------------+--------------
+       2 | 201         |       250.00
+       3 | 301         |       450.00
+       5 | 202         |       230.00
+       6 | 302         |       420.00
+       7 | 401         |       300.00
+       8 | 501         |       600.00
+(6 satýr)
+
+=== D2 ===
+ reservation_id |  full_name  |    hotel_name     | room_number 
+----------------+-------------+-------------------+-------------
+              1 | Ayse Yilmaz | Bosphorus Hotel   | 101
+              2 | Ayse Yilmaz | Bosphorus Hotel   | 201
+              3 | Ayse Yilmaz | Bosphorus Hotel   | 301
+              4 | Ayse Yilmaz | Ankara Grand      | 401
+              5 | Ayse Yilmaz | Aegean Resort     | 501
+              6 | Mehmet Kaya | City Center Hotel | 102
+              7 | Mehmet Kaya | City Center Hotel | 202
+              8 | Mehmet Kaya | City Center Hotel | 302
+              9 | Mehmet Kaya | Ankara Grand      | 401
+             10 | Mehmet Kaya | Aegean Resort     | 501
+(10 satýr)
+
+=== D3 ===
+ guest_id |  full_name  
+----------+-------------
+        1 | Ayse Yilmaz
+        2 | Mehmet Kaya
+       10 | Ceren Polat
+(3 satýr)
+
+=== D4a (EXCEPT) ===
+ guest_id |   full_name   
+----------+---------------
+        3 | Elif Demir
+        4 | Can Ozturk
+        5 | Zeynep Arslan
+        6 | Burak Sahin
+        7 | Selin Celik
+        8 | Emre Aydin
+        9 | Deniz Koc
+(7 satýr)
+
+=== D4b (NOT EXISTS) ===
+ guest_id |   full_name   
+----------+---------------
+        3 | Elif Demir
+        4 | Can Ozturk
+        5 | Zeynep Arslan
+        6 | Burak Sahin
+        7 | Selin Celik
+        8 | Emre Aydin
+        9 | Deniz Koc
+(7 satýr)
+
+=== D4 doÄŸrulama (0 beklenir) ===
+ fark_satir_sayisi 
+-------------------
+                 0
+(1 satýr)
+
+=== D5 ===
+ guest_a_id |    guest_a    | guest_b_id |    guest_b    |   city   
+------------+---------------+------------+---------------+----------
+          3 | Elif Demir    |          5 | Zeynep Arslan | Ankara
+          3 | Elif Demir    |          9 | Deniz Koc     | Ankara
+          5 | Zeynep Arslan |          9 | Deniz Koc     | Ankara
+          1 | Ayse Yilmaz   |          2 | Mehmet Kaya   | Istanbul
+          1 | Ayse Yilmaz   |          6 | Burak Sahin   | Istanbul
+          1 | Ayse Yilmaz   |          8 | Emre Aydin    | Istanbul
+          2 | Mehmet Kaya   |          6 | Burak Sahin   | Istanbul
+          2 | Mehmet Kaya   |          8 | Emre Aydin    | Istanbul
+          6 | Burak Sahin   |          8 | Emre Aydin    | Istanbul
+          4 | Can Ozturk    |          7 | Selin Celik   | Izmir
+(10 satýr)
+
+=== D6 ===
+ guest_id |  full_name  
+----------+-------------
+        1 | Ayse Yilmaz
+        2 | Mehmet Kaya
+(2 satýr)
+
+=== D6 Ã§apraz kontrol (HAVING COUNT DISTINCT) ===
+ guest_id |  full_name  
+----------+-------------
+        1 | Ayse Yilmaz
+        2 | Mehmet Kaya
+(2 satýr)
+
+=== D6 hatalÄ± COUNT(*) Ã¶rneÄŸi (Ceren yanlÄ±ÅŸlÄ±kla gelir) ===
+ guest_id |  full_name  
+----------+-------------
+        1 | Ayse Yilmaz
+        2 | Mehmet Kaya
+       10 | Ceren Polat
+(3 satýr)
+

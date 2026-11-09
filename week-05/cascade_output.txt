@@ -1,0 +1,15 @@
+CASCADE BEFORE
+BEGIN
+ guest_count | reservation_count | target_reservations 
+-------------+-------------------+---------------------
+          10 |                15 |                   5
+(1 satýr)
+
+DELETE 1
+CASCADE AFTER
+ guest_count | reservation_count | target_reservations 
+-------------+-------------------+---------------------
+           9 |                10 |                   0
+(1 satýr)
+
+ROLLBACK

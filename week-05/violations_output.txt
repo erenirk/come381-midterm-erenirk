@@ -1,0 +1,373 @@
+\pset footer off
+-- COM E381 | Ã–dev 2 | BÃ¶lÃ¼m B: Constraint ihlal ve sÄ±nÄ±r testleri
+-- Her ihlal testi yalnÄ±zca hedeflediÄŸi kuralÄ± bozar; baÅŸarÄ±lÄ± sÄ±nÄ±r testleri sonraki veriyi etkiler.
+-- Beklenen PostgreSQL SQLSTATE yorum satÄ±rÄ±nda belirtilir.
+-- HazÄ±rlÄ±k bloÄŸu: tablo iÃ§eriÄŸini ve identity deÄŸerlerini sabitler.
+TRUNCATE reservation, room, guest, hotel, room_type RESTART IDENTITY CASCADE;
+TRUNCATE TABLE
+INSERT INTO room_type (name) VALUES ('Standard'), ('Suite');
+INSERT 0 2
+INSERT INTO hotel (name, city) VALUES ('Test Hotel', 'Istanbul');
+INSERT 0 1
+INSERT INTO guest (full_name, email, city, status, joined_date) VALUES
+  ('Test Guest One', 'one@example.com', 'Istanbul', 'active', '2025-01-01'),
+  ('Test Guest Two', 'two@example.com', 'Ankara', 'active', '2025-02-01');
+INSERT 0 2
+INSERT INTO room (hotel_id, room_type_id, room_number, nightly_rate, max_occupancy) VALUES
+  (1, 1, '101', 100.00, 2),
+  (1, 1, '102', 120.00, 2),
+  (1, 2, '201', 250.00, 4);
+INSERT 0 3
+INSERT INTO reservation (guest_id, room_id, booked_on, check_in, check_out, guest_count, status, rating)
+VALUES (1, 1, '2026-10-01', '2026-12-01', '2026-12-03', 2, 'confirmed', 4);
+INSERT 0 1
+-- ---------------------------------------------------------------------
+-- NOT NULL: 20 test; hedef sÃ¼tun dÄ±ÅŸÄ±ndaki girdiler geÃ§erli tutulur.
+-- ---------------------------------------------------------------------
+-- T01 | guest.full_name NOT NULL | Beklenen: 23502
+INSERT INTO guest (full_name, email, city) VALUES (NULL, 't01@example.com', 'Istanbul');
+psql:week-05/violations.sql:25: ERROR:  23502: null value in column "full_name" of relation "guest" violates not-null constraint
+AYRINTI:  Failing row contains (3, null, t01@example.com, Istanbul, active, 2026-11-09).
+ÞEMA ADI:  public
+TABLO ADI:  guest
+SÜTUN ADI:  full_name
+YER:  ReportNotNullViolationError, execMain.c:2219
+-- T02 | guest.email NOT NULL | Beklenen: 23502
+INSERT INTO guest (full_name, email, city) VALUES ('No Email', NULL, 'Istanbul');
+psql:week-05/violations.sql:27: ERROR:  23502: null value in column "email" of relation "guest" violates not-null constraint
+AYRINTI:  Failing row contains (4, No Email, null, Istanbul, active, 2026-11-09).
+ÞEMA ADI:  public
+TABLO ADI:  guest
+SÜTUN ADI:  email
+YER:  ReportNotNullViolationError, execMain.c:2219
+-- T03 | guest.city NOT NULL | Beklenen: 23502
+INSERT INTO guest (full_name, email, city) VALUES ('No City', 't03@example.com', NULL);
+psql:week-05/violations.sql:29: ERROR:  23502: null value in column "city" of relation "guest" violates not-null constraint
+AYRINTI:  Failing row contains (5, No City, t03@example.com, null, active, 2026-11-09).
+ÞEMA ADI:  public
+TABLO ADI:  guest
+SÜTUN ADI:  city
+YER:  ReportNotNullViolationError, execMain.c:2219
+-- T04 | guest.status NOT NULL | Beklenen: 23502
+INSERT INTO guest (full_name, email, city, status) VALUES ('No Status', 't04@example.com', 'Istanbul', NULL);
+psql:week-05/violations.sql:31: ERROR:  23502: null value in column "status" of relation "guest" violates not-null constraint
+AYRINTI:  Failing row contains (6, No Status, t04@example.com, Istanbul, null, 2026-11-09).
+ÞEMA ADI:  public
+TABLO ADI:  guest
+SÜTUN ADI:  status
+YER:  ReportNotNullViolationError, execMain.c:2219
+-- T05 | guest.joined_date NOT NULL | Beklenen: 23502
+INSERT INTO guest (full_name, email, city, joined_date) VALUES ('No Date', 't05@example.com', 'Istanbul', NULL);
+psql:week-05/violations.sql:33: ERROR:  23502: null value in column "joined_date" of relation "guest" violates not-null constraint
+AYRINTI:  Failing row contains (7, No Date, t05@example.com, Istanbul, active, null).
+ÞEMA ADI:  public
+TABLO ADI:  guest
+SÜTUN ADI:  joined_date
+YER:  ReportNotNullViolationError, execMain.c:2219
+-- T06 | room_type.name NOT NULL | Beklenen: 23502
+INSERT INTO room_type (name) VALUES (NULL);
+psql:week-05/violations.sql:35: ERROR:  23502: null value in column "name" of relation "room_type" violates not-null constraint
+AYRINTI:  Failing row contains (3, null).
+ÞEMA ADI:  public
+TABLO ADI:  room_type
+SÜTUN ADI:  name
+YER:  ReportNotNullViolationError, execMain.c:2219
+-- T07 | hotel.name NOT NULL | Beklenen: 23502
+INSERT INTO hotel (name, city) VALUES (NULL, 'Istanbul');
+psql:week-05/violations.sql:37: ERROR:  23502: null value in column "name" of relation "hotel" violates not-null constraint
+AYRINTI:  Failing row contains (2, null, Istanbul).
+ÞEMA ADI:  public
+TABLO ADI:  hotel
+SÜTUN ADI:  name
+YER:  ReportNotNullViolationError, execMain.c:2219
+-- T08 | hotel.city NOT NULL | Beklenen: 23502
+INSERT INTO hotel (name, city) VALUES ('City Missing Hotel', NULL);
+psql:week-05/violations.sql:39: ERROR:  23502: null value in column "city" of relation "hotel" violates not-null constraint
+AYRINTI:  Failing row contains (3, City Missing Hotel, null).
+ÞEMA ADI:  public
+TABLO ADI:  hotel
+SÜTUN ADI:  city
+YER:  ReportNotNullViolationError, execMain.c:2219
+-- T09 | room.hotel_id NOT NULL | Beklenen: 23502
+INSERT INTO room (hotel_id, room_type_id, room_number, nightly_rate, max_occupancy) VALUES (NULL, 1, 'x09', 100, 2);
+psql:week-05/violations.sql:41: ERROR:  23502: null value in column "hotel_id" of relation "room" violates not-null constraint
+AYRINTI:  Failing row contains (4, null, 1, x09, 100.00, 2).
+ÞEMA ADI:  public
+TABLO ADI:  room
+SÜTUN ADI:  hotel_id
+YER:  ReportNotNullViolationError, execMain.c:2219
+-- T10 | room.room_type_id NOT NULL | Beklenen: 23502
+INSERT INTO room (hotel_id, room_type_id, room_number, nightly_rate, max_occupancy) VALUES (1, NULL, 'x10', 100, 2);
+psql:week-05/violations.sql:43: ERROR:  23502: null value in column "room_type_id" of relation "room" violates not-null constraint
+AYRINTI:  Failing row contains (5, 1, null, x10, 100.00, 2).
+ÞEMA ADI:  public
+TABLO ADI:  room
+SÜTUN ADI:  room_type_id
+YER:  ReportNotNullViolationError, execMain.c:2219
+-- T11 | room.room_number NOT NULL | Beklenen: 23502
+INSERT INTO room (hotel_id, room_type_id, room_number, nightly_rate, max_occupancy) VALUES (1, 1, NULL, 100, 2);
+psql:week-05/violations.sql:45: ERROR:  23502: null value in column "room_number" of relation "room" violates not-null constraint
+AYRINTI:  Failing row contains (6, 1, 1, null, 100.00, 2).
+ÞEMA ADI:  public
+TABLO ADI:  room
+SÜTUN ADI:  room_number
+YER:  ReportNotNullViolationError, execMain.c:2219
+-- T12 | room.nightly_rate NOT NULL | Beklenen: 23502
+INSERT INTO room (hotel_id, room_type_id, room_number, nightly_rate, max_occupancy) VALUES (1, 1, 'x12', NULL, 2);
+psql:week-05/violations.sql:47: ERROR:  23502: null value in column "nightly_rate" of relation "room" violates not-null constraint
+AYRINTI:  Failing row contains (7, 1, 1, x12, null, 2).
+ÞEMA ADI:  public
+TABLO ADI:  room
+SÜTUN ADI:  nightly_rate
+YER:  ReportNotNullViolationError, execMain.c:2219
+-- T13 | room.max_occupancy NOT NULL | Beklenen: 23502
+INSERT INTO room (hotel_id, room_type_id, room_number, nightly_rate, max_occupancy) VALUES (1, 1, 'x13', 100, NULL);
+psql:week-05/violations.sql:49: ERROR:  23502: null value in column "max_occupancy" of relation "room" violates not-null constraint
+AYRINTI:  Failing row contains (8, 1, 1, x13, 100.00, null).
+ÞEMA ADI:  public
+TABLO ADI:  room
+SÜTUN ADI:  max_occupancy
+YER:  ReportNotNullViolationError, execMain.c:2219
+-- T14 | reservation.guest_id NOT NULL | Beklenen: 23502
+INSERT INTO reservation (guest_id, room_id, booked_on, check_in, check_out, guest_count, status) VALUES (NULL, 2, CURRENT_DATE, '2026-12-10', '2026-12-11', 1, 'confirmed');
+psql:week-05/violations.sql:51: ERROR:  23502: null value in column "guest_id" of relation "reservation" violates not-null constraint
+AYRINTI:  Failing row contains (2, null, 2, 2026-11-09, 2026-12-10, 2026-12-11, 1, confirmed, null).
+ÞEMA ADI:  public
+TABLO ADI:  reservation
+SÜTUN ADI:  guest_id
+YER:  ReportNotNullViolationError, execMain.c:2219
+-- T15 | reservation.room_id NOT NULL | Beklenen: 23502
+INSERT INTO reservation (guest_id, room_id, booked_on, check_in, check_out, guest_count, status) VALUES (2, NULL, CURRENT_DATE, '2026-12-10', '2026-12-11', 1, 'confirmed');
+psql:week-05/violations.sql:53: ERROR:  23502: null value in column "room_id" of relation "reservation" violates not-null constraint
+AYRINTI:  Failing row contains (3, 2, null, 2026-11-09, 2026-12-10, 2026-12-11, 1, confirmed, null).
+ÞEMA ADI:  public
+TABLO ADI:  reservation
+SÜTUN ADI:  room_id
+YER:  ReportNotNullViolationError, execMain.c:2219
+-- T16 | reservation.booked_on NOT NULL | Beklenen: 23502
+INSERT INTO reservation (guest_id, room_id, booked_on, check_in, check_out, guest_count, status) VALUES (2, 2, NULL, '2026-12-10', '2026-12-11', 1, 'confirmed');
+psql:week-05/violations.sql:55: ERROR:  23502: null value in column "booked_on" of relation "reservation" violates not-null constraint
+AYRINTI:  Failing row contains (4, 2, 2, null, 2026-12-10, 2026-12-11, 1, confirmed, null).
+ÞEMA ADI:  public
+TABLO ADI:  reservation
+SÜTUN ADI:  booked_on
+YER:  ReportNotNullViolationError, execMain.c:2219
+-- T17 | reservation.check_in NOT NULL | Beklenen: 23502
+INSERT INTO reservation (guest_id, room_id, booked_on, check_in, check_out, guest_count, status) VALUES (2, 2, CURRENT_DATE, NULL, '2026-12-11', 1, 'confirmed');
+psql:week-05/violations.sql:57: ERROR:  23502: null value in column "check_in" of relation "reservation" violates not-null constraint
+AYRINTI:  Failing row contains (5, 2, 2, 2026-11-09, null, 2026-12-11, 1, confirmed, null).
+ÞEMA ADI:  public
+TABLO ADI:  reservation
+SÜTUN ADI:  check_in
+YER:  ReportNotNullViolationError, execMain.c:2219
+-- T18 | reservation.check_out NOT NULL | Beklenen: 23502
+INSERT INTO reservation (guest_id, room_id, booked_on, check_in, check_out, guest_count, status) VALUES (2, 2, CURRENT_DATE, '2026-12-10', NULL, 1, 'confirmed');
+psql:week-05/violations.sql:59: ERROR:  23502: null value in column "check_out" of relation "reservation" violates not-null constraint
+AYRINTI:  Failing row contains (6, 2, 2, 2026-11-09, 2026-12-10, null, 1, confirmed, null).
+ÞEMA ADI:  public
+TABLO ADI:  reservation
+SÜTUN ADI:  check_out
+YER:  ReportNotNullViolationError, execMain.c:2219
+-- T19 | reservation.guest_count NOT NULL | Beklenen: 23502
+INSERT INTO reservation (guest_id, room_id, booked_on, check_in, check_out, guest_count, status) VALUES (2, 2, CURRENT_DATE, '2026-12-10', '2026-12-11', NULL, 'confirmed');
+psql:week-05/violations.sql:61: ERROR:  23502: null value in column "guest_count" of relation "reservation" violates not-null constraint
+AYRINTI:  Failing row contains (7, 2, 2, 2026-11-09, 2026-12-10, 2026-12-11, null, confirmed, null).
+ÞEMA ADI:  public
+TABLO ADI:  reservation
+SÜTUN ADI:  guest_count
+YER:  ReportNotNullViolationError, execMain.c:2219
+-- T20 | reservation.status NOT NULL | Beklenen: 23502
+INSERT INTO reservation (guest_id, room_id, booked_on, check_in, check_out, guest_count, status) VALUES (2, 2, CURRENT_DATE, '2026-12-10', '2026-12-11', 1, NULL);
+psql:week-05/violations.sql:63: ERROR:  23502: null value in column "status" of relation "reservation" violates not-null constraint
+AYRINTI:  Failing row contains (8, 2, 2, 2026-11-09, 2026-12-10, 2026-12-11, 1, null, null).
+ÞEMA ADI:  public
+TABLO ADI:  reservation
+SÜTUN ADI:  status
+YER:  ReportNotNullViolationError, execMain.c:2219
+-- ---------------------------------------------------------------------
+-- UNIQUE
+-- ---------------------------------------------------------------------
+-- T21 | uq_guest_email | Beklenen: 23505
+INSERT INTO guest (full_name, email, city) VALUES ('Duplicate Email', 'one@example.com', 'Izmir');
+psql:week-05/violations.sql:69: ERROR:  23505: duplicate key value violates unique constraint "uq_guest_email"
+AYRINTI:  Key (email)=(one@example.com) already exists.
+ÞEMA ADI:  public
+TABLO ADI:  guest
+KISITLAMA ADI:  uq_guest_email
+YER:  _bt_check_unique, nbtinsert.c:673
+-- T22 | uq_room_type_name | Beklenen: 23505
+INSERT INTO room_type (name) VALUES ('Standard');
+psql:week-05/violations.sql:71: ERROR:  23505: duplicate key value violates unique constraint "uq_room_type_name"
+AYRINTI:  Key (name)=(Standard) already exists.
+ÞEMA ADI:  public
+TABLO ADI:  room_type
+KISITLAMA ADI:  uq_room_type_name
+YER:  _bt_check_unique, nbtinsert.c:673
+-- T23 | uq_hotel_name_city | Beklenen: 23505
+INSERT INTO hotel (name, city) VALUES ('Test Hotel', 'Istanbul');
+psql:week-05/violations.sql:73: ERROR:  23505: duplicate key value violates unique constraint "uq_hotel_name_city"
+AYRINTI:  Key (name, city)=(Test Hotel, Istanbul) already exists.
+ÞEMA ADI:  public
+TABLO ADI:  hotel
+KISITLAMA ADI:  uq_hotel_name_city
+YER:  _bt_check_unique, nbtinsert.c:673
+-- T24 | uq_room_hotel_number | Beklenen: 23505
+INSERT INTO room (hotel_id, room_type_id, room_number, nightly_rate, max_occupancy) VALUES (1, 1, '102', 140, 2);
+psql:week-05/violations.sql:75: ERROR:  23505: duplicate key value violates unique constraint "uq_room_hotel_number"
+AYRINTI:  Key (hotel_id, room_number)=(1, 102) already exists.
+ÞEMA ADI:  public
+TABLO ADI:  room
+KISITLAMA ADI:  uq_room_hotel_number
+YER:  _bt_check_unique, nbtinsert.c:673
+-- T25 | uq_reservation_guest_room_check_in | Beklenen: 23505
+INSERT INTO reservation (guest_id, room_id, booked_on, check_in, check_out, guest_count, status) VALUES (1, 1, '2026-10-02', '2026-12-01', '2026-12-04', 2, 'confirmed');
+psql:week-05/violations.sql:77: ERROR:  23505: duplicate key value violates unique constraint "uq_reservation_guest_room_check_in"
+AYRINTI:  Key (guest_id, room_id, check_in)=(1, 1, 2026-12-01) already exists.
+ÞEMA ADI:  public
+TABLO ADI:  reservation
+KISITLAMA ADI:  uq_reservation_guest_room_check_in
+YER:  _bt_check_unique, nbtinsert.c:673
+-- ---------------------------------------------------------------------
+-- CHECK ihlalleri
+-- ---------------------------------------------------------------------
+-- T26 | chk_room_nightly_rate_positive | Beklenen: 23514
+INSERT INTO room (hotel_id, room_type_id, room_number, nightly_rate, max_occupancy) VALUES (1, 1, 'x26', 0, 2);
+psql:week-05/violations.sql:83: ERROR:  23514: new row for relation "room" violates check constraint "chk_room_nightly_rate_positive"
+AYRINTI:  Failing row contains (10, 1, 1, x26, 0.00, 2).
+ÞEMA ADI:  public
+TABLO ADI:  room
+KISITLAMA ADI:  chk_room_nightly_rate_positive
+YER:  ExecConstraints, execMain.c:2081
+-- T27 | chk_room_max_occupancy_positive | Beklenen: 23514
+INSERT INTO room (hotel_id, room_type_id, room_number, nightly_rate, max_occupancy) VALUES (1, 1, 'x27', 100, 0);
+psql:week-05/violations.sql:85: ERROR:  23514: new row for relation "room" violates check constraint "chk_room_max_occupancy_positive"
+AYRINTI:  Failing row contains (11, 1, 1, x27, 100.00, 0).
+ÞEMA ADI:  public
+TABLO ADI:  room
+KISITLAMA ADI:  chk_room_max_occupancy_positive
+YER:  ExecConstraints, execMain.c:2081
+-- T28 | chk_reservation_date_order | Beklenen: 23514
+INSERT INTO reservation (guest_id, room_id, booked_on, check_in, check_out, guest_count, status) VALUES (2, 2, CURRENT_DATE, '2026-12-11', '2026-12-10', 1, 'confirmed');
+psql:week-05/violations.sql:87: ERROR:  23514: new row for relation "reservation" violates check constraint "chk_reservation_date_order"
+AYRINTI:  Failing row contains (10, 2, 2, 2026-11-09, 2026-12-11, 2026-12-10, 1, confirmed, null).
+ÞEMA ADI:  public
+TABLO ADI:  reservation
+KISITLAMA ADI:  chk_reservation_date_order
+YER:  ExecConstraints, execMain.c:2081
+-- T29 | chk_reservation_guest_count_positive | Beklenen: 23514
+INSERT INTO reservation (guest_id, room_id, booked_on, check_in, check_out, guest_count, status) VALUES (2, 2, CURRENT_DATE, '2026-12-10', '2026-12-11', 0, 'confirmed');
+psql:week-05/violations.sql:89: ERROR:  23514: new row for relation "reservation" violates check constraint "chk_reservation_guest_count_positive"
+AYRINTI:  Failing row contains (11, 2, 2, 2026-11-09, 2026-12-10, 2026-12-11, 0, confirmed, null).
+ÞEMA ADI:  public
+TABLO ADI:  reservation
+KISITLAMA ADI:  chk_reservation_guest_count_positive
+YER:  ExecConstraints, execMain.c:2081
+-- T30 | chk_guest_status_values | Beklenen: 23514
+INSERT INTO guest (full_name, email, city, status) VALUES ('Invalid Status', 't30@example.com', 'Izmir', 'banned');
+psql:week-05/violations.sql:91: ERROR:  23514: new row for relation "guest" violates check constraint "chk_guest_status_values"
+AYRINTI:  Failing row contains (9, Invalid Status, t30@example.com, Izmir, banned, 2026-11-09).
+ÞEMA ADI:  public
+TABLO ADI:  guest
+KISITLAMA ADI:  chk_guest_status_values
+YER:  ExecConstraints, execMain.c:2081
+-- T31 | chk_reservation_status_values | Beklenen: 23514
+INSERT INTO reservation (guest_id, room_id, booked_on, check_in, check_out, guest_count, status) VALUES (2, 2, CURRENT_DATE, '2026-12-10', '2026-12-11', 1, 'booked-ish');
+psql:week-05/violations.sql:93: ERROR:  23514: new row for relation "reservation" violates check constraint "chk_reservation_status_values"
+AYRINTI:  Failing row contains (12, 2, 2, 2026-11-09, 2026-12-10, 2026-12-11, 1, booked-ish, null).
+ÞEMA ADI:  public
+TABLO ADI:  reservation
+KISITLAMA ADI:  chk_reservation_status_values
+YER:  ExecConstraints, execMain.c:2081
+-- T32 | chk_reservation_rating_range | Beklenen: 23514
+INSERT INTO reservation (guest_id, room_id, booked_on, check_in, check_out, guest_count, status, rating) VALUES (2, 2, CURRENT_DATE, '2026-12-10', '2026-12-11', 1, 'confirmed', 6);
+psql:week-05/violations.sql:95: ERROR:  23514: new row for relation "reservation" violates check constraint "chk_reservation_rating_range"
+AYRINTI:  Failing row contains (13, 2, 2, 2026-11-09, 2026-12-10, 2026-12-11, 1, confirmed, 6).
+ÞEMA ADI:  public
+TABLO ADI:  reservation
+KISITLAMA ADI:  chk_reservation_rating_range
+YER:  ExecConstraints, execMain.c:2081
+-- ---------------------------------------------------------------------
+-- SÄ±nÄ±r ve NULL testleri
+-- ---------------------------------------------------------------------
+-- T33 | chk_room_nightly_rate_positive | Beklenen: OK (en dÃ¼ÅŸÃ¼k pozitif fiyat)
+INSERT INTO room (hotel_id, room_type_id, room_number, nightly_rate, max_occupancy) VALUES (1, 1, 'x33', 0.01, 1);
+INSERT 0 1
+-- T34 | chk_room_max_occupancy_positive | Beklenen: OK (en dÃ¼ÅŸÃ¼k geÃ§erli kapasite)
+INSERT INTO room (hotel_id, room_type_id, room_number, nightly_rate, max_occupancy) VALUES (1, 1, 'x34', 1, 1);
+INSERT 0 1
+-- T35 | chk_reservation_date_order | Beklenen: OK (en kÄ±sa konaklama: bir gece)
+INSERT INTO reservation (guest_id, room_id, booked_on, check_in, check_out, guest_count, status) VALUES (2, 2, CURRENT_DATE, '2026-12-10', '2026-12-11', 1, 'confirmed');
+INSERT 0 1
+-- T36 | chk_reservation_rating_range | Beklenen: OK (Ã¼st sÄ±nÄ±r 5)
+INSERT INTO reservation (guest_id, room_id, booked_on, check_in, check_out, guest_count, status, rating) VALUES (1, 3, CURRENT_DATE, '2026-12-10', '2026-12-11', 1, 'confirmed', 5);
+INSERT 0 1
+-- T37 | chk_reservation_rating_range | Beklenen: OK (NULL -> UNKNOWN; CHECK bunu reddetmez)
+INSERT INTO reservation (guest_id, room_id, booked_on, check_in, check_out, guest_count, status, rating) VALUES (2, 3, CURRENT_DATE, '2026-12-12', '2026-12-13', 1, 'completed', NULL);
+INSERT 0 1
+-- ---------------------------------------------------------------------
+-- FOREIGN KEY (olmayan ebeveyn ve ebeveyn gÃ¼ncelleme/silme yÃ¶nleri)
+-- ---------------------------------------------------------------------
+-- T38 | fk_reservation_guest | Beklenen: 23503
+INSERT INTO reservation (guest_id, room_id, booked_on, check_in, check_out, guest_count, status) VALUES (999, 1, CURRENT_DATE, '2026-12-10', '2026-12-11', 1, 'confirmed');
+psql:week-05/violations.sql:115: ERROR:  23503: insert or update on table "reservation" violates foreign key constraint "fk_reservation_guest"
+AYRINTI:  Key (guest_id)=(999) is not present in table "guest".
+ÞEMA ADI:  public
+TABLO ADI:  reservation
+KISITLAMA ADI:  fk_reservation_guest
+YER:  ri_ReportViolation, ri_triggers.c:2783
+-- T39 | fk_reservation_room | Beklenen: 23503
+INSERT INTO reservation (guest_id, room_id, booked_on, check_in, check_out, guest_count, status) VALUES (1, 999, CURRENT_DATE, '2026-12-10', '2026-12-11', 1, 'confirmed');
+psql:week-05/violations.sql:117: ERROR:  23503: insert or update on table "reservation" violates foreign key constraint "fk_reservation_room"
+AYRINTI:  Key (room_id)=(999) is not present in table "room".
+ÞEMA ADI:  public
+TABLO ADI:  reservation
+KISITLAMA ADI:  fk_reservation_room
+YER:  ri_ReportViolation, ri_triggers.c:2783
+-- T40 | fk_room_hotel | Beklenen: 23503
+INSERT INTO room (hotel_id, room_type_id, room_number, nightly_rate, max_occupancy) VALUES (999, 1, 'x40', 100, 2);
+psql:week-05/violations.sql:119: ERROR:  23503: insert or update on table "room" violates foreign key constraint "fk_room_hotel"
+AYRINTI:  Key (hotel_id)=(999) is not present in table "hotel".
+ÞEMA ADI:  public
+TABLO ADI:  room
+KISITLAMA ADI:  fk_room_hotel
+YER:  ri_ReportViolation, ri_triggers.c:2783
+-- T41 | fk_room_room_type | Beklenen: 23503
+INSERT INTO room (hotel_id, room_type_id, room_number, nightly_rate, max_occupancy) VALUES (1, 999, 'x41', 100, 2);
+psql:week-05/violations.sql:121: ERROR:  23503: insert or update on table "room" violates foreign key constraint "fk_room_room_type"
+AYRINTI:  Key (room_type_id)=(999) is not present in table "room_type".
+ÞEMA ADI:  public
+TABLO ADI:  room
+KISITLAMA ADI:  fk_room_room_type
+YER:  ri_ReportViolation, ri_triggers.c:2783
+-- T42 | fk_reservation_guest | Beklenen: 23503 (rezervasyonu olan mÃ¼ÅŸterinin id'sini deÄŸiÅŸtirme)
+UPDATE guest SET guest_id = 500 WHERE guest_id = 1;
+psql:week-05/violations.sql:123: ERROR:  23503: update or delete on table "guest" violates foreign key constraint "fk_reservation_guest" on table "reservation"
+AYRINTI:  Key (guest_id)=(1) is still referenced from table "reservation".
+ÞEMA ADI:  public
+TABLO ADI:  reservation
+KISITLAMA ADI:  fk_reservation_guest
+YER:  ri_ReportViolation, ri_triggers.c:2811
+-- T43 | fk_room_hotel | Beklenen: 23001 (odasÄ± olan oteli silme; RESTRICT)
+DELETE FROM hotel WHERE hotel_id = 1;
+psql:week-05/violations.sql:125: ERROR:  23001: update or delete on table "hotel" violates RESTRICT setting of foreign key constraint "fk_room_hotel" on table "room"
+AYRINTI:  Key (hotel_id)=(1) is referenced from table "room".
+ÞEMA ADI:  public
+TABLO ADI:  room
+KISITLAMA ADI:  fk_room_hotel
+YER:  ri_ReportViolation, ri_triggers.c:2797
+-- T44 | fk_reservation_room | Beklenen: 23001 (rezervasyonu bulunan odayÄ± silme; RESTRICT)
+DELETE FROM room WHERE room_id = 1;
+psql:week-05/violations.sql:127: ERROR:  23001: update or delete on table "room" violates RESTRICT setting of foreign key constraint "fk_reservation_room" on table "reservation"
+AYRINTI:  Key (room_id)=(1) is referenced from table "reservation".
+ÞEMA ADI:  public
+TABLO ADI:  reservation
+KISITLAMA ADI:  fk_reservation_room
+YER:  ri_ReportViolation, ri_triggers.c:2797
+-- T45 | fk_room_room_type | Beklenen: 23001 (odalarÄ± olan oda tipini silme; RESTRICT)
+DELETE FROM room_type WHERE room_type_id = 1;
+psql:week-05/violations.sql:130: ERROR:  23001: update or delete on table "room_type" violates RESTRICT setting of foreign key constraint "fk_room_room_type" on table "room"
+AYRINTI:  Key (room_type_id)=(1) is referenced from table "room".
+ÞEMA ADI:  public
+TABLO ADI:  room
+KISITLAMA ADI:  fk_room_room_type
+YER:  ri_ReportViolation, ri_triggers.c:2797
